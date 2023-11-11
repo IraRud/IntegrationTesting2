@@ -13,6 +13,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import com.example.integrationtesting2.pojo.Employee;
@@ -22,6 +24,9 @@ import com.example.integrationtesting2.repository.EmployeeRepository;
 import com.example.integrationtesting2.repository.PositionRepository;
 import com.example.integrationtesting2.repository.ReportRepository;
 import com.example.integrationtesting2.service.ReportService;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 
@@ -29,7 +34,14 @@ import java.util.List;
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Testcontainers
 public class ReportTests {
+
+    @Container
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
+            .withUsername("postgres")
+            .withPassword("7899");
+
     @Autowired
     MockMvc mockMvc;
 
@@ -45,6 +57,12 @@ public class ReportTests {
     @Autowired
     private ReportRepository reportRepository;
 
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN", password = "admin1234")
