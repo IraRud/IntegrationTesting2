@@ -1,10 +1,11 @@
 package com.example.integrationtesting2.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-
+import com.example.integrationtesting2.DTO.EmployeeDTO;
+import com.example.integrationtesting2.DTO.PositionDTO;
+import com.example.integrationtesting2.pojo.Employee;
+import com.example.integrationtesting2.pojo.Position;
+import com.example.integrationtesting2.repository.EmployeeRepository;
+import com.example.integrationtesting2.repository.PositionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.minidev.json.JSONObject;
 import org.junit.jupiter.api.Test;
@@ -15,21 +16,34 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import com.example.integrationtesting2.DTO.EmployeeDTO;
-import com.example.integrationtesting2.DTO.PositionDTO;
-import com.example.integrationtesting2.pojo.Employee;
-import com.example.integrationtesting2.pojo.Position;
-import com.example.integrationtesting2.repository.EmployeeRepository;
-import com.example.integrationtesting2.repository.PositionRepository;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Testcontainers
 public class EmployeeTests {
+
+    @Container
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
+            .withUsername("postgres")
+            .withPassword("7899");
 
     @Autowired
     MockMvc mockMvc;
@@ -40,7 +54,12 @@ public class EmployeeTests {
     @Autowired
     private PositionRepository positionRepository;
 
-
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN", password = "admin1234")
